@@ -1,0 +1,2 @@
+rootProject.name='JXAidlSdkDemo'
+include ':app'
