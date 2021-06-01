@@ -131,6 +131,10 @@ class VisualPlayerActivity : AppCompatActivity(), View.OnClickListener, ServiceC
                     //未知
                     Toast.makeText(this, "无网络" + resultMessage, Toast.LENGTH_SHORT).show()
                 }
+                JXOpenApiErrorCode.ERROR_NOT_USED -> {
+                    //未知
+                    Toast.makeText(this, "首次使用需要打开JOOX" + resultMessage, Toast.LENGTH_SHORT).show()
+                }
             }
 
         }
