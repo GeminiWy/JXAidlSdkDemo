@@ -118,11 +118,10 @@
                     android:text="播放停止状态" />
 
             <Button
-                    android:id="@+id/btnSchemeAction"
+                    android:id="@+id/btnSeek"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:onClick="onClickSchemeAction"
-                    android:text="自定义跳转" />
+                    android:text="调整播放进度" />
 
 
         </LinearLayout>

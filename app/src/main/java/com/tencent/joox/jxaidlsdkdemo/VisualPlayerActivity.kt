@@ -31,9 +31,11 @@ class VisualPlayerActivity : AppCompatActivity(), View.OnClickListener, ServiceC
         btnPause.setOnClickListener(this)
         btnPlayNext.setOnClickListener(this)
         getCurSongInfo.setOnClickListener(this)
+        btnSeek.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
+
         when (v) {
             btnActive -> {
                 var isBindSuc = JXOpenClient.bindService(this, this)
@@ -75,6 +77,13 @@ class VisualPlayerActivity : AppCompatActivity(), View.OnClickListener, ServiceC
                 var songInfostr = respBundle?.getString(JXOpenApiRespParamsKey.API_RESP_KEY_DATA)
                 var songInfo = Gson().fromJson(songInfostr, JXOpenSongModel::class.java)
                 tv_song_info.text = songInfostr
+            }
+
+            btnSeek -> {
+                var params = Bundle()
+                params.putInt(JXOpenApiReqParamsKey.API_REQ_KEY_SEEK_POS,20000)
+                var respBundle = jxOpenApi?.execute(JXOpenApiAction.API_ACTION_SEEK, params)
+                disposeResult(respBundle)
             }
         }
     }
@@ -131,19 +140,34 @@ class VisualPlayerActivity : AppCompatActivity(), View.OnClickListener, ServiceC
         var resultCode = result?.get(JXOpenApiRespParamsKey.API_RESP_KEY_CODE)
         var resultMessage = result?.get(JXOpenApiRespParamsKey.API_RESP_KEY_ERROR_MESSAGE)
         when (resultCode) {
-            JXOpenApiErrorCode.ERROR_NEED_USER_AUTHENTICATION -> {
-                //用户需要授权
-                Toast.makeText(this, "授权失败" + resultMessage, Toast.LENGTH_SHORT).show()
+            JXOpenApiErrorCode.ERROR_NOT_USED -> {
+                //首次使用
+                Toast.makeText(this, "首次使用需要打开JOOX" + resultMessage, Toast.LENGTH_SHORT).show()
             }
             JXOpenApiErrorCode.ERROR_NOT_LOGIN -> {
                 //需要登陆
                 Toast.makeText(this, "需要登陆" + resultMessage, Toast.LENGTH_SHORT).show()
             }
+            JXOpenApiErrorCode.ERROR_NEED_USER_AUTHENTICATION -> {
+                //用户需要授权
+                Toast.makeText(this, "授权失败" + resultMessage, Toast.LENGTH_SHORT).show()
+            }
             JXOpenApiErrorCode.ERROR_OK -> {
                 //成功
                 Toast.makeText(this, "授权成功" + resultMessage, Toast.LENGTH_SHORT).show()
+                registerListener()
             }
         }
+    }
+
+    /**
+     * 授权成功才可以使用OpenApi
+     */
+    private fun registerListener() {
+        var resultParamSongChange = jxOpenApi?.register(JXOpenApiEvent.EVENT_PLAY_SONG_CHANGED, eventListener)
+        disposeResult(resultParamSongChange)
+        var resultParamStateChange = jxOpenApi?.register(JXOpenApiEvent.EVENT_PLAY_STATE_CHANGED, eventListener)
+        disposeResult(resultParamStateChange)
     }
 
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -152,8 +176,7 @@ class VisualPlayerActivity : AppCompatActivity(), View.OnClickListener, ServiceC
         jxOpenApi = JXOpenApi.Stub.asInterface(service)
         var resultParam = jxOpenApi?.registerApp("jx_13110539617")
         disposeRegisterAppResult(resultParam)
-        jxOpenApi?.register(JXOpenApiEvent.EVENT_PLAY_SONG_CHANGED, eventListener)
-        jxOpenApi?.register(JXOpenApiEvent.EVENT_PLAY_STATE_CHANGED, eventListener)
+
     }
 
     override fun onServiceDisconnected(name: ComponentName?) {
@@ -210,8 +233,10 @@ class VisualPlayerActivity : AppCompatActivity(), View.OnClickListener, ServiceC
     override fun onDestroy() {
         super.onDestroy()
         try {
-            jxOpenApi?.unRegister(JXOpenApiEvent.EVENT_PLAY_SONG_CHANGED,eventListener)
-            jxOpenApi?.unRegister(JXOpenApiEvent.EVENT_PLAY_STATE_CHANGED,eventListener)
+            var resultParamSongChange = jxOpenApi?.unRegister(JXOpenApiEvent.EVENT_PLAY_SONG_CHANGED, eventListener)
+            disposeResult(resultParamSongChange)
+            var resultParamStateChange = jxOpenApi?.unRegister(JXOpenApiEvent.EVENT_PLAY_STATE_CHANGED, eventListener)
+            disposeResult(resultParamStateChange)
         } catch (ignored: Throwable) {
         }
         unbindService(this)
